@@ -19,18 +19,6 @@
 #include "labwc.h"
 #include "theme.h"
 
-struct lab_img_data {
-	enum lab_img_type type;
-	/* lab_img_data is refcounted to be shared by multiple lab_imgs */
-	int refcount;
-
-	/* Handler for the loaded image file */
-	struct lab_data_buffer *buffer; /* for PNG/XBM/XPM image */
-#if HAVE_RSVG
-	RsvgHandle *svg; /* for SVG image */
-#endif
-};
-
 static struct lab_img *
 create_img(struct lab_img_data *img_data)
 {
@@ -42,7 +30,7 @@ create_img(struct lab_img_data *img_data)
 }
 
 struct lab_img *
-lab_img_load(enum lab_img_type type, const char *path, float *xbm_color)
+lab_img_load(enum lab_img_type type, const char *path, float *xbm_color, float *xbm_bg_color)
 {
 	if (string_null_or_empty(path)) {
 		return NULL;
@@ -57,7 +45,8 @@ lab_img_load(enum lab_img_type type, const char *path, float *xbm_color)
 		break;
 	case LAB_IMG_XBM:
 		assert(xbm_color);
-		img_data->buffer = img_xbm_load(path, xbm_color);
+		assert(xbm_bg_color);
+		img_data->buffer = img_xbm_load(path, xbm_color, xbm_bg_color);
 		break;
 	case LAB_IMG_XPM:
 		img_data->buffer = img_xpm_load(path);
@@ -83,9 +72,9 @@ lab_img_load(enum lab_img_type type, const char *path, float *xbm_color)
 }
 
 struct lab_img *
-lab_img_load_from_bitmap(const char *bitmap, float *rgba)
+lab_img_load_from_bitmap(const char *bitmap, float *rgba, float *bg_color)
 {
-	struct lab_data_buffer *buffer = img_xbm_load_from_bitmap(bitmap, rgba);
+	struct lab_data_buffer *buffer = img_xbm_load_from_bitmap(bitmap, rgba, bg_color);
 	if (!buffer) {
 		return NULL;
 	}
@@ -106,10 +95,13 @@ lab_img_copy(struct lab_img *img)
 }
 
 void
-lab_img_add_modifier(struct lab_img *img,  lab_img_modifier_func_t modifier)
+lab_img_add_modifier(struct lab_img *img,  lab_img_modifier_func_t modifier, struct lab_img_modifier_param_t *param)
 {
-	lab_img_modifier_func_t *mod = wl_array_add(&img->modifiers, sizeof(*mod));
-	*mod = modifier;
+	struct lab_img_modifier_arr *arr =  znew(*arr);
+	arr->modifier = modifier;
+	arr->param = param;
+	struct lab_img_modifier_arr **mod = wl_array_add(&img->modifiers, sizeof(*mod));
+	*mod = arr;
 }
 
 /*
@@ -177,10 +169,11 @@ lab_img_render(struct lab_img *img, int width, int height, double scale)
 
 	/* Apply modifiers to the buffer (e.g. draw hover overlay) */
 	cairo_t *cairo = cairo_create(buffer->surface);
-	lab_img_modifier_func_t *modifier;
-	wl_array_for_each(modifier, &img->modifiers) {
+	struct lab_img_modifier_arr **arr;
+
+	wl_array_for_each(arr, &img->modifiers) {
 		cairo_save(cairo);
-		(*modifier)(cairo, width, height);
+		(*(*arr)->modifier)(cairo, width, height, (*arr)->param);
 		cairo_restore(cairo);
 	}
 
@@ -208,6 +201,22 @@ lab_img_destroy(struct lab_img *img)
 		}
 #endif
 		free(img->data);
+
+		struct lab_img_modifier_arr **arr;
+		
+		wl_array_for_each(arr, &img->modifiers) {
+			if ((*arr)->param) {
+				if ((*arr)->param->dispose) {
+					(*arr)->param->dispose((*arr)->param->ptr);
+				}
+				else {
+					// use generic free method
+					zfree((*arr)->param->ptr);
+				}
+				zfree((*arr)->param);
+			}
+			zfree(*arr);
+		}
 	}
 
 	wl_array_release(&img->modifiers);

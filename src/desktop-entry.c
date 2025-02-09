@@ -331,7 +331,7 @@ desktop_entry_load_icon(struct server *server, const char *icon_name, int size, 
 	}
 
 	wlr_log(WLR_DEBUG, "loading icon file %s", ctx.path);
-	struct lab_img *img = lab_img_load(convert_img_type(ctx.format), ctx.path, NULL);
+	struct lab_img *img = lab_img_load(convert_img_type(ctx.format), ctx.path, NULL, NULL);
 
 	free(ctx.path);
 	return img;

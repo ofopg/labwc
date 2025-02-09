@@ -43,6 +43,7 @@ struct pixmap {
 };
 
 static uint32_t color;
+static uint32_t bg_color;
 static char *current_buffer_position;
 static struct token *tokens;
 static int nr_tokens, alloc_tokens;
@@ -195,6 +196,9 @@ process_bytes(struct pixmap *pixmap, struct token *tokens)
 			if (t->value & bit) {
 				pixmap->data[row * pixmap->width + col] = color;
 			}
+			else {
+				pixmap->data[row * pixmap->width + col] = bg_color;
+			}
 		}
 		++t;
 	}
@@ -257,10 +261,11 @@ parse_xbm_builtin(const char *button, int size)
 }
 
 struct lab_data_buffer *
-img_xbm_load_from_bitmap(const char *bitmap, float *rgba)
+img_xbm_load_from_bitmap(const char *bitmap, float *rgba, float *bg_rgba)
 {
 	struct pixmap pixmap = {0};
 	color = argb32(rgba);
+	bg_color = argb32(bg_rgba);
 	pixmap = parse_xbm_builtin(bitmap, 6);
 
 	return buffer_create_from_data(pixmap.data, pixmap.width, pixmap.height,
@@ -268,13 +273,14 @@ img_xbm_load_from_bitmap(const char *bitmap, float *rgba)
 }
 
 struct lab_data_buffer *
-img_xbm_load(const char *filename, float *rgba)
+img_xbm_load(const char *filename, float *rgba, float *bg_rgba)
 {
 	struct pixmap pixmap = {0};
 	if (string_null_or_empty(filename)) {
 		return NULL;
 	}
 	color = argb32(rgba);
+	bg_color = argb32(bg_rgba);
 
 	/* Read file into memory as it's easier to tokenize that way */
 	struct buf token_buf = grab_file(filename);

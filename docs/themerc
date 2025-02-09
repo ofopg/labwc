@@ -49,10 +49,16 @@ window.inactive.shadow.size: 40
 window.active.shadow.color: #00000060
 window.inactive.shadow.color: #00000040
 
-# Note that "menu", "iconify", "max", "close" buttons colors can be defined
+# Note that "menu", "iconify", "max", "close" buttons colors and backgrounds can be defined
 # individually by inserting the type after the button node, for example:
 #
 #     window.active.button.iconify.unpressed.image.color: #333333
+#     window.active.button.close.unpressed.image.color: #ffffff
+#     window.active.button.close.unpressed.image.bg.color: #ff0000
+#     window.active.button.close.hover.color: #ffffff
+#     window.active.button.close.hover.image.bg.color: #ff0000
+#     window.inactive.button.close.hover.color: #ffffff
+#     window.inactive.button.close.hover.image.bg.color: #ff0000
 
 # menu
 menu.overlap.x: 0

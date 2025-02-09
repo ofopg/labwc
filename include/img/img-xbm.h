@@ -11,9 +11,9 @@ struct lab_data_buffer;
  *
  * Example bitmap: char button[6] = { 0x3f, 0x3f, 0x21, 0x21, 0x21, 0x3f };
  */
-struct lab_data_buffer *img_xbm_load_from_bitmap(const char *bitmap, float *rgba);
+struct lab_data_buffer *img_xbm_load_from_bitmap(const char *bitmap, float *rgba, float *bg_rgba);
 
 /* img_xbm_load - Convert xbm file to buffer with cairo surface */
-struct lab_data_buffer *img_xbm_load(const char *filename, float *rgba);
+struct lab_data_buffer *img_xbm_load(const char *filename, float *rgba, float *bg_rgba);
 
 #endif /* LABWC_IMG_XBM_H */

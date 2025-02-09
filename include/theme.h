@@ -68,6 +68,9 @@ struct theme {
 	struct {
 		/* TODO: add toggled/hover/pressed/disabled colors for buttons */
 		float button_colors[LAB_SSD_BUTTON_LAST + 1][4];
+		float button_bg_colors[LAB_SSD_BUTTON_LAST + 1][4];
+		float button_hover_colors[LAB_SSD_BUTTON_LAST + 1][4];
+		float button_hover_bg_colors[LAB_SSD_BUTTON_LAST + 1][4];
 
 		float border_color[4];
 		float toggled_keybinds_color[4];

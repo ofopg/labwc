@@ -2,6 +2,10 @@
 #ifndef LABWC_IMG_H
 #define LABWC_IMG_H
 
+#if HAVE_RSVG
+#include "img/img-svg.h"
+#endif
+
 #include <cairo.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,13 +18,25 @@ enum lab_img_type {
 	LAB_IMG_XPM,
 };
 
+struct lab_img_data {
+	enum lab_img_type type;
+	/* lab_img_data is refcounted to be shared by multiple lab_imgs */
+	int refcount;
+
+	/* Handler for the loaded image file */
+	struct lab_data_buffer *buffer; /* for PNG/XBM/XPM image */
+#if HAVE_RSVG
+	RsvgHandle *svg; /* for SVG image */
+#endif
+};
+
 struct lab_img {
 	struct wl_array modifiers; /* lab_img_modifier_func_t */
 	struct lab_img_data *data;
 };
 
 struct lab_img *lab_img_load(enum lab_img_type type, const char *path,
-	float *xbm_color);
+	float *xbm_color, float *xbm_bg_color);
 
 /**
  * lab_img_load_from_bitmap() - create button from monochrome bitmap
@@ -29,9 +45,22 @@ struct lab_img *lab_img_load(enum lab_img_type type, const char *path,
  *
  * Example bitmap: char button[6] = { 0x3f, 0x3f, 0x21, 0x21, 0x21, 0x3f };
  */
-struct lab_img *lab_img_load_from_bitmap(const char *bitmap, float *rgba);
+struct lab_img *lab_img_load_from_bitmap(const char *bitmap, float *rgba, float *bg_color);
 
-typedef void (*lab_img_modifier_func_t)(cairo_t *cairo, int w, int h);
+typedef void (*lab_img_modifier_param_dispose_func_t)(void *ptr);
+
+struct lab_img_modifier_param_t {
+	void *ptr;
+	lab_img_modifier_param_dispose_func_t dispose;
+};
+
+typedef void (*lab_img_modifier_func_t)(cairo_t *cairo, int w, int h, struct lab_img_modifier_param_t *param);
+
+struct lab_img_modifier_arr
+{
+	lab_img_modifier_func_t modifier;
+	struct lab_img_modifier_param_t *param;
+};
 
 /**
  * lab_img_copy() - Copy lab_img
@@ -52,7 +81,7 @@ struct lab_img *lab_img_copy(struct lab_img *img);
  * after the image is rendered on a buffer with lab_img_render(). For example,
  * hover effects for window buttons can be drawn over the rendered image.
  */
-void lab_img_add_modifier(struct lab_img *img, lab_img_modifier_func_t modifier);
+void lab_img_add_modifier(struct lab_img *img, lab_img_modifier_func_t modifier, struct lab_img_modifier_param_t *param);
 
 /**
  * lab_img_render() - Render lab_img to a buffer
