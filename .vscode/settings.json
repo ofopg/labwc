@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "random": "c",
-        "*.tcc": "c",
-        "theme.h": "c",
-        "img-png.h": "c"
-    }
-}
